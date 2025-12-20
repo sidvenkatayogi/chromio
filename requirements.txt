@@ -1,0 +1,6 @@
+chromadb
+sentence-transformers
+datasets
+numpy
+tqdm
+scikit-image
