@@ -1,14 +1,3 @@
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
 chroma_db/
 *.pkl
 pycache/
-__pycache__
