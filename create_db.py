@@ -1,6 +1,5 @@
 import chromadb
 from chromadb.utils import embedding_functions
-from datasets import load_dataset
 import numpy as np
 from tqdm import tqdm
 from skimage import color
@@ -10,7 +9,7 @@ import pickle
 
 # Configuration
 CHROMA_PATH = "chroma_db"
-COLLECTION_NAME = "unsplash_palettes"
+COLLECTION_NAME = "pat"
 MODEL_NAME = "all-mpnet-base-v2"
 
 KD_TREE_PATH = "color_kdtree.pkl"
@@ -34,10 +33,13 @@ def main():
 
     print("KDTree loaded successfully.")
 
-    # Load Unsplash dataset
-    print("Loading Unsplash dataset...")
-    unsplash_dataset = load_dataset("1aurent/unsplash-lite-palette", split="train")
-    print(f"Loaded {len(unsplash_dataset)} entries.")
+    # Load hexcolor dataset
+    print("Loading hexcolor dataset...")
+    with open("hexcolor_vf/train_names.pkl", "rb") as f:
+        train_names = pickle.load(f)
+    with open("hexcolor_vf/train_palettes_rgb.pkl", "rb") as f:
+        train_palettes = pickle.load(f)
+    print(f"Loaded {len(train_names)} entries.")
 
     # Initialize ChromaDB
     print("Initializing ChromaDB...")
@@ -47,8 +49,6 @@ def main():
     ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=MODEL_NAME)
     
     # Get or create collection
-    # Force delete if exists to start fresh? No, assume append or fresh.
-    # client.delete_collection(COLLECTION_NAME) 
     collection = client.get_or_create_collection(name=COLLECTION_NAME, embedding_function=ef)
 
     print("Processing documents and populating database...")
@@ -58,80 +58,58 @@ def main():
     ids = []
     
     # Iterate with index to use as ID
-    for idx, entry in enumerate(tqdm(unsplash_dataset)):
+    for idx, (name_tokens, palette_rgb) in enumerate(tqdm(zip(train_names, train_palettes), total=len(train_names))):
 
-        # Remove try/except to see errors, or print them
         try:
-            ai_description = entry.get('ai_description')
-            if not ai_description:
-                # if idx < 5: print(f"Skipping {idx}: no description")
+            desc = " ".join(name_tokens)
+            if not desc:
                 continue
                 
-            palettes = entry.get('palettes')
-            if not palettes:
-                # if idx < 5: print(f"Skipping {idx}: no palettes")
+            if not palette_rgb or len(palette_rgb) != 5:
                 continue
 
             # Extract colors
             formatted_palette = []
             
-            # ATTEMPT 1: User instructions "indices 1 through 5".
-            # Tracing: Key '1' -> [[r,g,b]]. Key '2' -> [[r,g,b], ...]. 
-            # We take the first color from each key as per previous logic.
-            
-            # Let's inspect the first one
-            if idx == 0:
-                print(f"Sample palettes keys: {palettes.keys()}")
-            
-            # Extra colors from key "5"
-            if "5" in palettes:
-                vals = palettes["5"]
-                for rgb_val in vals:
-                    if rgb_val:
-                        # Normalize RGB
-                        current_rgb_norm = np.array([[[c / 255.0 for c in rgb_val]]])
-                        current_lab = color.rgb2lab(current_rgb_norm)[0][0]
-                        
-                        # Find nearest neighbor using KDTree
-                        dist, nearest_idx = tree.query(current_lab, k=1)
-                        
-                        nearest_name, _ = color_ref_metadata[nearest_idx]
-                        
-                        # Use actual hex code from the source RGB
-                        actual_hex = rgb_to_hex(rgb_val)
-                        formatted_palette.append(f"{nearest_name}({actual_hex})")
+            for rgb_val in palette_rgb:
+                if rgb_val:
+                    # Normalize RGB
+                    current_rgb_norm = np.array([[[c / 255.0 for c in rgb_val]]])
+                    current_lab = color.rgb2lab(current_rgb_norm)[0][0]
+                    
+                    # Find nearest neighbor using KDTree
+                    dist, nearest_idx = tree.query(current_lab, k=1)
+
+                    # Get names and combine them
+                    nearest_name, _ = color_ref_metadata[nearest_idx]
+
+                    # Use actual hex code from the source RGB
+                    actual_hex = rgb_to_hex(rgb_val)
+                    formatted_palette.append(f"{nearest_name}({actual_hex})")
             
             if len(formatted_palette) != 5:
                 continue
             
             doc_structure = {
-                "description": ai_description,
+                "description": desc,
                 "palette": formatted_palette
             }
             
             documents.append(json.dumps(doc_structure))
-            
-            # Metadata must be primitives
-            metadatas.append({
-                "description": ai_description,
-                "palette_str": ", ".join(formatted_palette)
-            })
              
             ids.append(str(idx))
             
             if len(documents) >= batch_size:
-                descriptions = [m["description"] for m in metadatas]
+                descriptions = [json.loads(d)["description"] for d in documents]
                 batch_embeddings = ef(descriptions)
 
                 collection.add(
                     ids=ids,
                     embeddings=batch_embeddings,
-                    documents=documents,
-                    metadatas=metadatas
+                    documents=documents
                 )
 
                 documents.clear()
-                metadatas.clear()
                 ids.clear()
 
         except Exception as e:
@@ -139,13 +117,12 @@ def main():
             continue
 
     if documents:
-        descriptions = [m['description'] for m in metadatas]
+        descriptions = [json.loads(d)['description'] for d in documents]
         batch_embeddings = ef(descriptions)
         collection.add(
             ids=ids,
             embeddings=batch_embeddings,
-            documents=documents,
-            metadatas=metadatas
+            documents=documents
         )
 
     print(f"Database creation complete. Total items: {collection.count()}")

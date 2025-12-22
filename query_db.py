@@ -5,11 +5,11 @@ import argparse
 
 # Configuration
 CHROMA_PATH = "chroma_db"
-COLLECTION_NAME = "unsplash_palettes"
+COLLECTION_NAME = "pat"
 MODEL_NAME = "all-mpnet-base-v2"
 
 def main():
-    parser = argparse.ArgumentParser(description="Search Unsplash palettes by description.")
+    parser = argparse.ArgumentParser(description="Search palettes by description.")
     parser.add_argument("query", nargs="?", help="Text query to search for.")
     args = parser.parse_args()
 
