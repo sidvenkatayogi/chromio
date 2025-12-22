@@ -83,17 +83,10 @@ def main():
             if idx == 0:
                 print(f"Sample palettes keys: {palettes.keys()}")
             
-            # Use keys 1 to 5 to extract one color each
-            for i in range(1, 6):
-                key = str(i)
-                if key in palettes:
-                    val = palettes[key]
-                    rgb_val = None
-                    if isinstance(val, list) and len(val) > 0 and isinstance(val[0], list):
-                         rgb_val = val[0]
-                    # elif isinstance(val, list) and len(val) == 3 and isinstance(val[0], (int, float)):
-                    #      rgb_val = val
-                    
+            # Extra colors from key "5"
+            if "5" in palettes:
+                vals = palettes["5"]
+                for rgb_val in vals:
                     if rgb_val:
                         # Normalize RGB
                         current_rgb_norm = np.array([[[c / 255.0 for c in rgb_val]]])

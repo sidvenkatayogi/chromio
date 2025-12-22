@@ -23,18 +23,19 @@ def main():
 
     results = collection.query(
         query_texts=[query],
-        n_results=1
+        n_results=3
     )
 
     if results['documents'] and results['documents'][0]:
-        doc_json = results['documents'][0][0]
-        data = json.loads(doc_json)
-        
         print("\n--- Match Found ---")
-        print(f"Description: {data['description']}")
-        print("Palette:")
-        for color in data['palette']:
-            print(f"  - {color}")
+        for result_doc in results['documents'][0]:
+            data = json.loads(result_doc)
+            
+            print(f"Description: {data['description']}")
+            print("Palette:")
+            for color in data['palette']:
+                print(f"  - {color}")
+            print("\n")
     else:
         print("No results found.")
 
