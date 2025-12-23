@@ -35,9 +35,9 @@ def main():
 
     # Load hexcolor dataset
     print("Loading hexcolor dataset...")
-    with open("hexcolor_vf/train_names.pkl", "rb") as f:
+    with open("data/hexcolor_vf/train_names.pkl", "rb") as f:
         train_names = pickle.load(f)
-    with open("hexcolor_vf/train_palettes_rgb.pkl", "rb") as f:
+    with open("data/hexcolor_vf/train_palettes_rgb.pkl", "rb") as f:
         train_palettes = pickle.load(f)
     print(f"Loaded {len(train_names)} entries.")
 
