@@ -13,3 +13,4 @@ chroma_db/
 *.pkl
 pycache/
 __pycache__
+.env

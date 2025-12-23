@@ -1,4 +1,4 @@
-FROM python:latest
+FROM python:3.12
 
 WORKDIR /usr/backend
 
@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["/bin/bash"]
+CMD ["python", "api.py"]

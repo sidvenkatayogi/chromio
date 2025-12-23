@@ -4,3 +4,5 @@ datasets
 numpy
 tqdm
 scikit-image
+openai
+python-dotenv
