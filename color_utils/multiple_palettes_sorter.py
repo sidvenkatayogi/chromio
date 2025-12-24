@@ -6,7 +6,7 @@ from color_utils.color_palette import ColorPalette
 
 class MultiplePalettesSorter:
     def __init__(self, palettes):
-        self.palettes = [p for p in palettes if p is not None] # list of ColorPalette
+        self.palettes = [ColorPalette(p.to_hex_list(), option='hex') for p in palettes if p is not None] # list of ColorPalette
         self.palette_count = len(palettes)
     
     
