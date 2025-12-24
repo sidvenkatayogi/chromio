@@ -30,6 +30,12 @@ class DccwMeasurer:
     def get_target_HEX_after_sort(self):
         return self.target_palette.to_hex_list(order=self.sorted_palette_indices[1])
     
+    def calculate_source_diversity(self):
+        return self.source_palette.calculate_palette_diversity()
+
+    def calculate_target_diversity(self):
+        return self.target_palette.calculate_palette_diversity()
+    
 
     def measure_dccw(self, reflect_cycle=False):
         source_labs = self.source_palette.get_LAB_color_values(order=self.sorted_palette_indices[0])

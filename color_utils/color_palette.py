@@ -1,4 +1,5 @@
-import numpy as np 
+import numpy as np
+from scipy.spatial.distance import pdist
 from color_utils.color import Color
 from colormath.color_diff import delta_e_cie2000
 
@@ -36,6 +37,19 @@ class ColorPalette:
     
     def length(self):
         return len(self.colors)
+    
+    def calculate_palette_diversity(self):
+        colors = self.get_LAB_color_objects()
+        pairwise_distance = 0.0
+        num_pairs = 0
+        N = len(colors)
+        for i in range(N - 1):
+            cur_color = colors[i]
+            distances = [delta_e_cie2000(cur_color, colors[j]) for j in range(i+1, N)]
+            num_pairs += len(distances)
+            pairwise_distance += sum(distances)
+        
+        return pairwise_distance / num_pairs if num_pairs > 0 else 0.0
 
     ###
     #   Graph Length Helpers

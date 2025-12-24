@@ -61,9 +61,21 @@ if __name__ == "__main__":
 
     dccw_score_no_cycle = dccw_measurer.measure_dccw(reflect_cycle=False)
     dccw_score_with_cycle = dccw_measurer.measure_dccw(reflect_cycle=True)
-
+    
+    # Both the Diversity metric and DCCW metric are important for meaasuring the quality of the generation.
+    # Low DCCW score typically means a tighter match against the target palette, however a LOW DCCW score along with low
+    # diversity typically indicate a palette that is monotonic but contains a target color. This senerio should be avoided unless
+    # the target palette also lacks diversity.
+    # A high Diversity score typically means a more varied color palette.
+    # A Diversity value similar to the target palette combined with a low DCCW core indicate that the model is able to
+    # generate matching palettes with a broader range of colors rather than only recommending similar hues.
+    print("-------------------------------")
+    print("Source Palette Diversity: ", dccw_measurer.calculate_source_diversity())
+    print("Target Palette Diversity: ", dccw_measurer.calculate_target_diversity())
+    print("-------------------------------")
     print("DCCW score (no cycle): ", dccw_score_no_cycle)
     print("DCCW score (with cycle): ", dccw_score_with_cycle)
+    print("-------------------------------")
     
     source_palette = dccw_measurer.get_source_HEX_before_sort()
     target_palette = dccw_measurer.get_target_HEX_before_sort()
