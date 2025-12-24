@@ -3,7 +3,7 @@ from color_utils.color import Color
 from colormath.color_diff import delta_e_cie2000
 
 class ColorPalette:
-    def __init__(self, source, option='rbg'):
+    def __init__(self, source, option='rbg', original_palette_group = None):
         """
             option = <'rbg' | 'color' | 'hex'>
         """
@@ -20,6 +20,8 @@ class ColorPalette:
                 self.colors.append(copy.deepcopy(s))
         else:
             raise ValueError("option must be 'rbg', 'color', or 'hex'")
+
+        self.original_palette_group = original_palette_group
 
 
     def to_hex_list(self, order=None):
@@ -49,7 +51,7 @@ class ColorPalette:
             cur_color = colors[i]
             next_color = colors[i+1]
             # gets distance between two color's lab representations
-            distance = self.delta_e_cie2000(cur_color, next_color)
+            distance = delta_e_cie2000(cur_color, next_color)
 
             lengths.append(distance)
 
@@ -70,6 +72,9 @@ class ColorPalette:
             order = list(range(self.length()))
         
         return self._get_LAB_color_values(order, is_geo)
+
+    def get_original_palette_group(self):
+        return self.original_palette_group
         
 
     ###
@@ -96,6 +101,17 @@ class ColorPalette:
         for idx in order:
             result.append(self.colors[idx].HEX())
         return result
+
+    @staticmethod
+    def merge_to_single_palette(palettes):
+        merged_hex_list = []
+        original_palette_group = []
+
+        for index, palette in enumerate(palettes):
+            merged_hex_list += palette.to_hex_list()
+            original_palette_group += [index for i in range(palette.length())]
+
+        return ColorPalette(source=merged_hex_list, option='hex', original_palette_group=original_palette_group)
 
     def __str__(self):
         return ' '.join(self.to_hex_list())
