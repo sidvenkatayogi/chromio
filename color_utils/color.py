@@ -1,8 +1,5 @@
-import copy
-import numpy as np
 from colormath.color_conversions import *
 from colormath.color_objects import *
-from skimage import color
 
 def patch_asscalar(a):
     return a.item()

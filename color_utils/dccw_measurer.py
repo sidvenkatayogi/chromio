@@ -1,6 +1,5 @@
 import numpy as np
 import math
-from scipy.spatial.distance import *
 
 from color_utils.multiple_palettes_sorter import *
 from color_utils.color_palette import ColorPalette

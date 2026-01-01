@@ -1,5 +1,3 @@
-import numpy as np
-from scipy.spatial.distance import pdist
 from color_utils.color import Color
 from colormath.color_diff import delta_e_cie2000
 

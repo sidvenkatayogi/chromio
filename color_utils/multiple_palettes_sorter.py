@@ -1,6 +1,3 @@
-import math
-import numpy as np
-
 from color_utils.single_palette_sorter import *
 from color_utils.color_palette import ColorPalette
 

@@ -1,6 +1,4 @@
 import math
-import enum
-import numpy as np
 import elkai
 from colormath.color_diff import delta_e_cie2000
 
