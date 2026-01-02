@@ -33,34 +33,23 @@ def generate_palette_with_gpt4o(user_query: str, examples: str) -> dict:
     client = openai.OpenAI()
 
     system_prompt = """
-You are an expert color palette generator. Your task is to create a color palette based on a user's query.
-You will be given a user query and some examples of palettes with their descriptions.
-Use these examples to understand the kind of palettes the user is looking for.
+    You are an expert Color Theorist and UI Designer. Your task is to generate a cohesive, aesthetically pleasing color palette based on a user's text query.
 
-Generate a palette of 5 colors in hex code format.
+    Generate a JSON response with the following format:
+    {
+        "palette_text": [Titanium White, Classic Red, Bright Yellow, Sky Blue, Black]
+        "palette_hex": ["#FFFFFF", "#FF0000", "#FFF200", "#54E5FF", "#00000"]
+    }
+    """
 
-Your output MUST be a JSON object with a single key "palette" which is an array of 5 hex code strings.
-Do not include any other text or explanations in your response.
+    user_message = f"""
+    What's the best color palette consisting of five colors to describe the text {user_query}?
+    Provide the color values using text (hex) format in ascending order.
 
-Example response:
-{
-  "palette": [
-    "#FFFFFF",
-    "#000000",
-    "#FF0000",
-    "#00FF00",
-    "#0000FF"
-  ]
-}
+    Here are some associate text-palette pairs for reference:
+    ### REFERENCE PALETTES
+    {examples}
 """
-
-    user_message = f"""Here are some examples of palettes:
----
-{examples}
----
-
-Based on those examples, generate a color palette for the following user query:
-User Query: "{user_query}"""
     try:
         response = client.chat.completions.create(
             model="gpt-5-mini",
@@ -76,7 +65,7 @@ User Query: "{user_query}"""
     except openai.APIError as e:
         print(f"OpenAI API Error: {e}")
     except json.JSONDecodeError:
-        print("Error: Failed to decode JSON from GPT-5-mini response.")
+        print("Error: Failed to decode JSON from model response.")
     return {}
 
 def main():
@@ -99,16 +88,17 @@ def main():
     
     print("1. Getting examples from the local database...")
     examples = get_examples_from_query_db(args.query)
+    print(examples)
 
     if not examples.strip():
         print("Could not get examples from query_db.py. Proceeding without them.")
 
-    print("2. Calling GPT-4o to generate a new palette...")
+    print("2. Calling model to generate a new palette...")
     generated_palette = generate_palette_with_gpt4o(args.query, examples)
 
-    if generated_palette and "palette" in generated_palette:
+    if generated_palette and "palette_hex" in generated_palette:
         print("\n--- Generated Palette ---")
-        for color in generated_palette["palette"]:
+        for color in generated_palette["palette_hex"]:
             print(f"  - {color}")
         print("\n")
     else:

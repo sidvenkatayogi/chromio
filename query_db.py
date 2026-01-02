@@ -27,12 +27,11 @@ def main():
     )
 
     if results['documents'] and results['documents'][0]:
-        print("\n--- Match Found ---")
-        for result_doc in results['documents'][0]:
+        # print("\n--- Match Found ---")
+        for i, result_doc in enumerate(results['documents'][0], start= 1):
             data = json.loads(result_doc)
-            
+            print(f"Palette {i}:")
             print(f"Description: {data['description']}")
-            print("Palette:")
             for color in data['palette']:
                 print(f"  - {color}")
             print("\n")
