@@ -580,6 +580,23 @@ class DccwMeasurer:
 
 
 
+def normalize_inv_map(error_val, tau, k=1):
+    """
+    Maps an error to a score [0, 1] (less error_val -> closer to 1)
+    tau: The error value at which the score should be 0.5
+    """
+    p = k * (error_val - tau)
+    return 1.0 / (1.0 + math.exp(p))
+
+def harmonic_mean(score_a, score_b):
+    """
+    Combine two scores using their harmonic mean
+    """
+    ep = 1e-6
+    
+    return (2 * score_a * score_b) / (score_a + score_b + ep)
+
+
 if __name__ == "__main__":
     
     # temporary test (TARGET PALETTE SAMPLED FROM k=10 PALETTE SAMPLE)
@@ -605,4 +622,13 @@ if __name__ == "__main__":
     print("-------------------------------")
     print("DCCW score (no cycle): ", dccw_score_no_cycle)
     print("DCCW score (with cycle): ", dccw_score_with_cycle)
+    print("-------------------------------")
+    
+    norm_D = normalize_inv_map(abs(target_diversity - source_diversity), tau=10.0, k=0.2)
+    norm_S = normalize_inv_map(dccw_score_no_cycle, tau=26.0, k=0.15)
+    score_R = harmonic_mean(norm_D, norm_S)
+    
+    print("Normalized Diversity diff: ", norm_D)
+    print("Normalized DCCW: ", norm_S)
+    print("Final Harmonic Mean (Grader Score): ", score_R)
     print("-------------------------------")
