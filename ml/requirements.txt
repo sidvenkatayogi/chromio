@@ -1,0 +1,3 @@
+numpy
+colormath==3.0.0
+elkai==2.0.1
