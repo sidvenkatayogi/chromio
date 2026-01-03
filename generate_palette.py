@@ -26,9 +26,9 @@ def get_examples_from_query_db(query: str) -> str:
         return ""
 
 
-def generate_palette_with_gpt4o(user_query: str, examples: str) -> dict:
+def generate_palette_with_model(user_query: str, examples: str) -> dict:
     """
-    Uses GPT-4o to generate a color palette.
+    Uses a model to generate a color palette.
     """
     client = openai.OpenAI()
 
@@ -94,7 +94,7 @@ def main():
         print("Could not get examples from query_db.py. Proceeding without them.")
 
     print("2. Calling model to generate a new palette...")
-    generated_palette = generate_palette_with_gpt4o(args.query, examples)
+    generated_palette = generate_palette_with_model(args.query, examples)
 
     if generated_palette and "palette_hex" in generated_palette:
         print("\n--- Generated Palette ---")

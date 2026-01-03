@@ -1,0 +1,13 @@
+# Evaluator Requirements
+pandas
+tqdm
+python-dotenv
+openai
+fireworks-ai
+chromadb
+sentence-transformers
+
+# Dependencies from grader
+numpy
+colormath==3.0.0
+elkai==2.0.1
