@@ -91,9 +91,22 @@ class BaseModelClient:
     
     def _parse_response(self, content: str) -> dict:
         """Parse the JSON response from the model with robust extraction."""
+        # Remove <think>...</think> blocks
+        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+        
+        data = None
         try:
             data = json.loads(content)
-            
+        except json.JSONDecodeError:
+            # Try to find JSON object
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group(0))
+                except json.JSONDecodeError:
+                    pass
+        
+        if data:
             # Try to extract palette_hex (handles nested JSON)
             palette_hex = self._extract_palette_hex(data)
             palette_text = self._extract_palette_text(data)
@@ -109,21 +122,17 @@ class BaseModelClient:
             if 'palette_hex' in data:
                 return data
             
-            # Fallback: try regex extraction
-            palette_hex = self._extract_hex_from_string(content)
-            if palette_hex:
-                return {'palette_hex': palette_hex, 'palette_text': []}
+            # If we parsed JSON but didn't find palette_hex, we might still want to try regex
+            # or return data if it looks useful? 
+            # But for now let's fall through to regex if no palette_hex found.
+        
+        # Fallback: try regex extraction
+        palette_hex = self._extract_hex_from_string(content)
+        if palette_hex:
+            return {'palette_hex': palette_hex, 'palette_text': []}
             
-            return data
-            
-        except json.JSONDecodeError as e:
-            print(f"Error parsing JSON response: {e}")
-            # Try regex extraction as last resort
-            palette_hex = self._extract_hex_from_string(content)
-            if palette_hex:
-                return {'palette_hex': palette_hex, 'palette_text': []}
-            print(f"Response content: {content}")
-            return {}
+        print(f"Error parsing JSON response. Content start: {content[:100]}")
+        return {}
     
     def _wait_for_rate_limit(self):
         """Wait if needed to respect rate limits."""

@@ -47,9 +47,11 @@ You are an expert Color Theorist and UI Designer. Your task is to generate a coh
 
 Generate a JSON response with the following format:
 {
-    "palette_text": ["Titanium White", "Classic Red", "Bright Yellow", "Sky Blue", "Black"],
-    "palette_hex": ["#FFFFFF", "#FF0000", "#FFF200", "#54E5FF", "#000000"]
+    "palette_text": ["color_name1", "color_name2", "color_name3", "color_name4", "color_name5"],
+    "palette_hex": ["#XXXXXX", "#XXXXXX", "#XXXXXX", "#XXXXXX", "#XXXXXX"]
 }
+
+\\no_think
 """
 
 USER_PROMPT_TEMPLATE = """
