@@ -624,7 +624,7 @@ if __name__ == "__main__":
     print("DCCW score (with cycle): ", dccw_score_with_cycle)
     print("-------------------------------")
     
-    norm_D = normalize_inv_map(abs(target_diversity - source_diversity), tau=10.0, k=0.2)
+    norm_D = normalize_inv_map(abs(target_diversity - source_diversity), tau=15.0, k=0.2)
     norm_S = normalize_inv_map(dccw_score_no_cycle, tau=26.0, k=0.15)
     score_R = harmonic_mean(norm_D, norm_S)
     
