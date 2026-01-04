@@ -576,8 +576,8 @@ class DccwMeasurer:
 
         return distance, closest_point
 #####
-
-
+from eval_protocol.models import EvaluateResult, EvaluationRow
+from eval_protocol.pytest import SingleTurnRolloutProcessor, evaluation_test
 
 
 def normalize_inv_map(error_val, tau, k=1):
@@ -596,6 +596,81 @@ def harmonic_mean(score_a, score_b):
     
     return (2 * score_a * score_b) / (score_a + score_b + ep)
 
+
+@evaluation_test(
+    rollout_processor=SingleTurnRolloutProcessor(),
+    evaluation_test_kwargs=[
+        {
+            "D_norm_kwargs": {"tau": 15.0, "k": 0.2},
+            "S_norm_kwargs": {"tau": 26.0, "k": 0.15}
+        }
+    ],
+)
+async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
+    """
+    Evaluate generated color palette considering both similarity to ground truths palette and similar diversity
+    
+    This Function utilizes multiple evaluation criteria:
+    - Format compliance checking for output palette in Word(Hex)
+    - Combines both similarity score (S) and diversity score (D) and calcualte their harmonic mean
+
+    Args:
+        row: EvaluationRow containing the conversation messages, ground truth palette, and ground truth palette diversity (Optional)
+        **kwargs: Additional hyperparameters like the ones for normalization
+    
+    Returns:
+        EvaluationRow with evaluation_result
+    """
+    D_norm_kwargs = kwargs.get('D_norm_kwargs')
+    S_norm_kwargs = kwargs.get('S_norm_kwargs')
+    
+    assistant_messages = [m for m in row.messages if getattr(m, "role", None) == "assistant"]
+    last_assistant_content = assistant_messages[-1].content if assistant_messages and getattr(assistant_messages[-1], "content", None) else ""
+    
+    prediction_palette = None # TODO: call extract_color_palette(str(last_assistant_content))
+    if prediction_palette is None or gt_palette not in row:
+        is_score_valid = False
+        reason="Unknown Reason."
+        if prediction_palette is None:
+            reason = "Invalid Model Output Format: Cannot find prediction palette"
+            is_score_valid = True # punish incorrect format generation
+        else if gt_palette not in row:
+            reason = "Invalid Data: Missing gt_palette"
+        
+        row.evaluation_result = EvaluateResult(
+            score=0.0,
+            is_score_valid=is_score_valid,
+            reason=reason
+        )
+        return row
+
+
+    gt_palette = row.gt_palette
+    dccw_measurer = DccwMeasurer(
+        source=prediction_palette,
+        source_option='hex',
+        target=gt_palette,
+        target_option='hex'
+    )
+    
+    dccw_score = dccw_measurer.measure_dccw(reflect_cycle=False)
+    diversity = dccw_measurer.calculate_source_diversity()
+    gt_diversity = if gt_diversity in row float(row.gt_diversity) else dccw_measurer.calculate_target_diversity()
+    
+    norm_D = normalize_inv_map(abs(target_diversity - source_diversity), tau=D_norm_kwargs['tau'], k=D_norm_kwargs['k'])
+    norm_S = normalize_inv_map(dccw_score_no_cycle, tau=S_norm_kwargs['tau'], k=S_norm_kwargs['k'])
+    score_R = harmonic_mean(norm_D, norm_S)
+    reason = f"Prediction: {dccw_measurer.get_source_HEX_after_sort()}, Ground Truths: {dccw_measurer.get_target_HEX_after_sort()}\t| norm_Diversity: {norm_D}, norm_DCCW: {norm_S}"
+
+    evaluation_result = EvaluateResult(
+        score=score_R,
+        is_score_valid=True,
+        reason=reason
+    )
+    row.evaluation_result = evaluation_result
+    return row
+    
+    
 
 if __name__ == "__main__":
     
