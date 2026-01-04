@@ -597,6 +597,22 @@ def harmonic_mean(score_a, score_b):
     return (2 * score_a * score_b) / (score_a + score_b + ep)
 
 
+def extract_color_palette(text: str)->list[str] | None:
+    """
+    Extracts color palette from text
+    Performs Format compliance checking for <think>...</think><answer>...</answer> structure
+    
+    Args:
+        text: text containing the generated color palette in Word(Hex)
+    
+    Returns:
+        A list of string hexcodes if text is in valid format
+        None if text is not format compliant or does not contain an extractable color palette
+    """
+    
+    return None
+
+
 @evaluation_test(
     rollout_processor=SingleTurnRolloutProcessor(),
     evaluation_test_kwargs=[
@@ -627,7 +643,7 @@ async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     assistant_messages = [m for m in row.messages if getattr(m, "role", None) == "assistant"]
     last_assistant_content = assistant_messages[-1].content if assistant_messages and getattr(assistant_messages[-1], "content", None) else ""
     
-    prediction_palette = None # TODO: call extract_color_palette(str(last_assistant_content))
+    prediction_palette = extract_color_palette(str(last_assistant_content))
     if prediction_palette is None or gt_palette not in row:
         is_score_valid = False
         reason="Unknown Reason."
