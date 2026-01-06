@@ -614,13 +614,7 @@ def extract_color_palette(text: str)->list[str] | None:
 
 
 @evaluation_test(
-    rollout_processor=SingleTurnRolloutProcessor(),
-    evaluation_test_kwargs=[
-        {
-            "D_norm_kwargs": {"tau": 15.0, "k": 0.2},
-            "S_norm_kwargs": {"tau": 26.0, "k": 0.15}
-        }
-    ],
+    rollout_processor=SingleTurnRolloutProcessor()
 )
 async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     """
@@ -637,8 +631,8 @@ async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     Returns:
         EvaluationRow with evaluation_result
     """
-    D_norm_kwargs = kwargs.get('D_norm_kwargs')
-    S_norm_kwargs = kwargs.get('S_norm_kwargs')
+    D_norm_kwargs = kwargs.get('D_norm_kwargs', {"tau": 15.0, "k": 0.2})
+    S_norm_kwargs = kwargs.get('S_norm_kwargs', {"tau": 26.0, "k": 0.15})
     
     assistant_messages = [m for m in row.messages if getattr(m, "role", None) == "assistant"]
     last_assistant_content = assistant_messages[-1].content if assistant_messages and getattr(assistant_messages[-1], "content", None) else ""
