@@ -50,8 +50,6 @@ Generate a JSON response with the following format:
     "palette_text": ["color_name1", "color_name2", "color_name3", "color_name4", "color_name5"],
     "palette_hex": ["#XXXXXX", "#XXXXXX", "#XXXXXX", "#XXXXXX", "#XXXXXX"]
 }
-
-\\no_think
 """
 
 USER_PROMPT_TEMPLATE = """

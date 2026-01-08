@@ -3,8 +3,8 @@
 Main evaluation script for color palette generation models.
 
 Usage:
-    python evaluate.py --provider openai --model gpt-4o-mini
-    python evaluate.py --provider fireworks --model accounts/fireworks/models/llama-v3p1-8b-instruct
+    python -m ml.evaluator.evaluate.py --provider openai --model gpt-4o-mini
+    python -m ml.evaluator.evaluate.py --provider fireworks --model accounts/fireworks/models/qwen3-8b
 """
 
 import os
@@ -17,6 +17,8 @@ import argparse
 import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
+import pickle
+import json
 
 # Add project root to path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,9 +30,14 @@ from ml.evaluator.config import (
     DEFAULT_MAX_RETRIES, DEFAULT_RETRY_DELAY, DEFAULT_REQUEST_DELAY
 )
 from ml.evaluator.model_clients import get_model_client
-from ml.evaluator.data_loader import load_eval_data, query_to_string
-from ml.evaluator.metrics import calculate_metrics, rgb_palette_to_hex
-from ml.evaluator.example_fetcher import ExampleFetcher
+from ml.grader.grader import Color, ColorPalette, DccwMeasurer, normalize_inv_map, harmonic_mean
+
+import chromadb
+from chromadb.utils import embedding_functions
+
+CHROMA_PATH = "chroma_db"
+COLLECTION_NAME = "pat"
+MODEL_NAME = "all-mpnet-base-v2"
 
 
 def run_evaluation(provider: str, model: str = None, output_dir: str = None, limit: int = None,
@@ -55,6 +62,10 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
     
     # Get model name
     model_name = model or DEFAULT_MODELS.get(provider)
+
+    if provider == "fireworks" and model:
+        model_name = "accounts/fireworks/models/" + model
+
     if not model_name:
         raise ValueError(f"No default model for provider: {provider}")
     
@@ -67,7 +78,15 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
     
     # Load evaluation data
     print("Loading evaluation data...")
-    test_names, test_palettes = load_eval_data(data_dir, TEST_NAMES_FILE, TEST_PALETTES_FILE)
+    
+    with open(os.path.join(data_dir, TEST_NAMES_FILE), 'rb') as f:
+        test_names = pickle.load(f)
+    
+    with open(os.path.join(data_dir, TEST_PALETTES_FILE), 'rb') as f:
+        test_palettes = pickle.load(f)
+    
+    # return test_names, test_palettes
+    # test_names, test_palettes = load_eval_data(data_dir, TEST_NAMES_FILE, TEST_PALETTES_FILE)
     
     if limit:
         test_names = test_names[:limit]
@@ -86,9 +105,18 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
         request_delay=request_delay
     )
     
-    # Initialize example fetcher (embedding model loaded once)
     print("Initializing example fetcher (loading embedding model)...")
-    example_fetcher = ExampleFetcher(PROJECT_ROOT)
+    chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH)
+        
+    # Initialize client and embedding function once
+    chroma_client = chromadb.PersistentClient(path=chroma_path)
+    emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+        model_name=MODEL_NAME
+    )
+    collection = chroma_client.get_collection(
+        name=COLLECTION_NAME,
+        embedding_function=emb_fn
+    )
     print()
     
     # Run evaluation
@@ -96,20 +124,28 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
     results = []
     
     for i, (query_words, gt_rgb_palette) in enumerate(tqdm(zip(test_names, test_palettes), total=len(test_names))):
-        query_str = query_to_string(query_words)
-        gt_hex_palette = rgb_palette_to_hex(gt_rgb_palette)
+        query_str = " ".join(query_words)
+        gt_hex_palette = ColorPalette(gt_rgb_palette)
         
-        # Get reference examples (using pre-initialized fetcher)
-        examples = example_fetcher.get_examples(query_str)
+        retrieval_results = collection.query(
+            query_texts=[query_str],
+            n_results=3
+        )
         
-        # Generate palette
-        response = client.generate_palette(query_str, examples)
+        output_lines = []
+        if retrieval_results['documents'] and retrieval_results['documents'][0]:
+            for j, result_doc in enumerate(retrieval_results['documents'][0], start=1):
+                data = json.loads(result_doc)
+                output_lines.append(f"Palette {j}:")
+                output_lines.append(f"Description: {data['description']}")
+                for color in data['palette']:
+                    output_lines.append(f"  - {color}")
+                output_lines.append("")
         
-        # Extract generated palette
-        generated_hex = response.get('palette_hex', [])
-        generated_text = response.get('palette_text', [])
+        examples = "\n".join(output_lines)
         
-        # Validate generated palette
+        generated_hex, generated_text, response = client.generate_palette(query_str, examples)
+        
         if len(generated_hex) != 5:
             print(f"Warning: Sample {i} generated {len(generated_hex)} colors instead of 5")
             # Pad or truncate to 5 colors
@@ -118,8 +154,44 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
             else:
                 generated_hex = generated_hex[:5]
         
-        # Calculate metrics
-        metrics = calculate_metrics(generated_hex, gt_hex_palette)
+        # Calculate metrics using grader.py directly
+        try:
+            dccw_measurer = DccwMeasurer(
+                source=generated_hex,
+                source_option='hex',
+                target=gt_hex_palette.to_hex_list(),
+                target_option='hex'
+            )
+            
+            dccw_score_no_cycle = dccw_measurer.measure_dccw(reflect_cycle=False)
+            source_diversity = dccw_measurer.calculate_source_diversity()
+            target_diversity = dccw_measurer.calculate_target_diversity()
+            
+            # Using constants compatible with grader.py
+            norm_D = normalize_inv_map(abs(target_diversity - source_diversity), tau=15.0, k=0.2)
+            norm_S = normalize_inv_map(dccw_score_no_cycle, tau=26.0, k=0.15)
+            score_R = harmonic_mean(norm_D, norm_S)
+            
+            metrics = {
+                'norm_D': norm_D,
+                'norm_S': norm_S,
+                'score_R': score_R,
+                'gt_diversity': target_diversity,
+                'gen_diversity': source_diversity,
+                'raw_dccw': dccw_score_no_cycle,
+                'diversity_diff': abs(target_diversity - source_diversity)
+            }
+        except Exception as e:
+            print(f"Error calculating metrics sample {i}: {e}")
+            metrics = {
+                'norm_D': float('nan'),
+                'norm_S': float('nan'),
+                'score_R': float('nan'),
+                'gt_diversity': float('nan'),
+                'gen_diversity': float('nan'),
+                'raw_dccw': float('nan'),
+                'diversity_diff': float('nan')
+            }
         
         # Store result
         result = {
@@ -128,13 +200,17 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
             'ground_truth_palette': str(gt_hex_palette),
             'ground_truth_rgb': str(gt_rgb_palette),
             'generated_palette': str(generated_hex),
-            'generated_text': str(response),
+            'generated_text': ' '.join(str(response).splitlines()),
             'generated_palette_text': str(generated_text),
             'norm_D': metrics['norm_D'],
             'norm_S': metrics['norm_S'],
             'score_R': metrics['score_R'],
             'model': model_name,
-            'provider': provider
+            'provider': provider,
+            'gt_diversity': metrics['gt_diversity'],
+            'gen_diversity': metrics['gen_diversity'],
+            'raw_dccw': metrics['raw_dccw'],
+            'diversity_diff': metrics['diversity_diff']
         }
         results.append(result)
     

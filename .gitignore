@@ -11,6 +11,7 @@ __MACOSX
 
 venv/
 chroma_db/
+chroma_db_train/
 *.pkl
 pycache/
 __pycache__

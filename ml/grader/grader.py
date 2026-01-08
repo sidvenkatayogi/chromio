@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import elkai
+import re
 
 from colormath.color_conversions import *
 from colormath.color_objects import *
@@ -63,9 +64,9 @@ class Color:
 
 # /color_utils/color_palette.py
 class ColorPalette:
-    def __init__(self, source, option='rbg', original_palette_group = None):
+    def __init__(self, source, option='rgb', original_palette_group = None):
         """
-            option = <'rbg' | 'color' | 'hex'>
+            option = <'rgb' | 'color' | 'hex'>
         """
         self.colors = []
         
@@ -79,7 +80,7 @@ class ColorPalette:
             for s in source:
                 self.colors.append(copy.deepcopy(s))
         else:
-            raise ValueError("option must be 'rbg', 'color', or 'hex'")
+            raise ValueError("option must be 'rgb', 'color', or 'hex'")
 
         self.original_palette_group = original_palette_group
 
@@ -610,12 +611,23 @@ def extract_color_palette(text: str)->list[str] | None:
         None if text is not format compliant or does not contain an extractable color palette
     """
     
-    return None
+    hex_pattern = r'#[0-9a-fA-F]{6}'
+    matches = re.findall(hex_pattern, text)
+    # Return first 5 unique colors
+    seen = []
+    for m in matches:
+        if m.lower() not in [s.lower() for s in seen]:
+            seen.append(m)
+        if len(seen) >= 5:
+            break
+    if len(seen) < 5:
+        return None
+    return seen
 
 
-@evaluation_test(
-    rollout_processor=SingleTurnRolloutProcessor()
-)
+# @evaluation_test(
+#     rollout_processor=SingleTurnRolloutProcessor()
+# )
 async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     """
     Evaluate generated color palette considering both similarity to ground truths palette and similar diversity
@@ -644,7 +656,7 @@ async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
         if prediction_palette is None:
             reason = "Invalid Model Output Format: Cannot find prediction palette"
             is_score_valid = True # punish incorrect format generation
-        else if gt_palette not in row:
+        elif gt_palette not in row:
             reason = "Invalid Data: Missing gt_palette"
         
         row.evaluation_result = EvaluateResult(
@@ -665,7 +677,7 @@ async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     
     dccw_score = dccw_measurer.measure_dccw(reflect_cycle=False)
     diversity = dccw_measurer.calculate_source_diversity()
-    gt_diversity = if gt_diversity in row float(row.gt_diversity) else dccw_measurer.calculate_target_diversity()
+    gt_diversity = float(row.gt_diversity) if gt_diversity in row else dccw_measurer.calculate_target_diversity()
     
     norm_D = normalize_inv_map(abs(target_diversity - source_diversity), tau=D_norm_kwargs['tau'], k=D_norm_kwargs['k'])
     norm_S = normalize_inv_map(dccw_score_no_cycle, tau=S_norm_kwargs['tau'], k=S_norm_kwargs['k'])
