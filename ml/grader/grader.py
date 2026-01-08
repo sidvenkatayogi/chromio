@@ -579,9 +579,11 @@ class DccwMeasurer:
 #####
 import os
 import pytest
+import logging
 from eval_protocol.models import EvaluateResult, EvaluationRow
 from eval_protocol.pytest import SingleTurnRolloutProcessor, evaluation_test
 
+logger = logging.getLogger(__name__)
 
 def normalize_inv_map(error_val, tau, k=1):
     """
@@ -627,13 +629,13 @@ def extract_color_palette(text: str)->list[str] | None:
     return seen
 
 
-JSONL_PATH = os.path.abspath("./development/chromio_v0_with_assistant_response.jsonl")
+JSONL_PATH = os.path.abspath("./development/chromio_v0.jsonl")
 
 @evaluation_test(
     input_dataset=[JSONL_PATH],
-    completion_params=[{"model": "fireworks_ai/accounts/fireworks/models/qwen3-8b", "temperature": 0.0}],
+    completion_params=[{"model": "fireworks_ai/accounts/fireworks/models/qwen3-8b", "temperature": 0.0}], # lowkey higher temp maybe?
     max_dataset_rows=5, # TODO: Remove during training
-    passed_threshold=0.6,
+    passed_threshold=0.6, # threshold for average R_score accross entire dataset
     rollout_processor=SingleTurnRolloutProcessor(),
     mode="pointwise",
 )
@@ -652,6 +654,9 @@ async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     Returns:
         EvaluationRow with evaluation_result
     """
+    logger.info(f"I am beginning to execute Chromio rollout: {row.execution_metadata.rollout_id}")
+
+    
     D_norm_kwargs = kwargs.get('D_norm_kwargs', {"tau": 15.0, "k": 0.2})
     S_norm_kwargs = kwargs.get('S_norm_kwargs', {"tau": 26.0, "k": 0.15})
     
@@ -659,13 +664,13 @@ async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     last_assistant_content = assistant_messages[-1].content if assistant_messages and getattr(assistant_messages[-1], "content", None) else ""
     
     prediction_palette = extract_color_palette(str(last_assistant_content))
-    if prediction_palette is None or 'gt_palette' not in row:
+    if prediction_palette is None or not hasattr(row, 'gt_palette'):
         is_score_valid = False
         reason="Unknown Reason."
         if prediction_palette is None:
             reason = "Invalid Model Output Format: Cannot find prediction palette"
             is_score_valid = True # punish incorrect format generation
-        elif 'gt_palette' not in row:
+        elif not hasattr(row, 'gt_palette'):
             reason = "Invalid Data: Missing gt_palette"
         
         row.evaluation_result = EvaluateResult(
@@ -686,10 +691,10 @@ async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     
     dccw_score = dccw_measurer.measure_dccw(reflect_cycle=False)
     diversity = dccw_measurer.calculate_source_diversity()
-    gt_diversity = float(row.gt_diversity) if gt_diversity in row else dccw_measurer.calculate_target_diversity()
+    gt_diversity = float(row.gt_diversity) if hasattr(row, 'gt_diversity') else dccw_measurer.calculate_target_diversity()
     
-    norm_D = normalize_inv_map(abs(target_diversity - source_diversity), tau=D_norm_kwargs['tau'], k=D_norm_kwargs['k'])
-    norm_S = normalize_inv_map(dccw_score_no_cycle, tau=S_norm_kwargs['tau'], k=S_norm_kwargs['k'])
+    norm_D = normalize_inv_map(abs(gt_diversity - diversity), tau=D_norm_kwargs['tau'], k=D_norm_kwargs['k'])
+    norm_S = normalize_inv_map(dccw_score, tau=S_norm_kwargs['tau'], k=S_norm_kwargs['k'])
     score_R = harmonic_mean(norm_D, norm_S)
     reason = f"Prediction: {dccw_measurer.get_source_HEX_after_sort()}, Ground Truths: {dccw_measurer.get_target_HEX_after_sort()}\t| norm_Diversity: {norm_D}, norm_DCCW: {norm_S}"
 
@@ -698,6 +703,8 @@ async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
         is_score_valid=True,
         reason=reason
     )
+    
+    logger.info(f"I am done executing Chromio rollout: {row.execution_metadata.rollout_id}")
     row.evaluation_result = evaluation_result
     return row
     

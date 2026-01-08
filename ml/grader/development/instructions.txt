@@ -1,0 +1,2 @@
+Put the datasets inside the development directory.
+Name must match what is put within JSONL_PATH in grader.py (for me its chromio_v0.jsonl)
