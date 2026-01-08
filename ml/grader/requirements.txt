@@ -1,4 +1,5 @@
 numpy
+pytest
 colormath==3.0.0
 elkai==2.0.1
 eval-protocol

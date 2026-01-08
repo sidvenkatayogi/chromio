@@ -577,6 +577,8 @@ class DccwMeasurer:
 
         return distance, closest_point
 #####
+import os
+import pytest
 from eval_protocol.models import EvaluateResult, EvaluationRow
 from eval_protocol.pytest import SingleTurnRolloutProcessor, evaluation_test
 
@@ -625,9 +627,16 @@ def extract_color_palette(text: str)->list[str] | None:
     return seen
 
 
-# @evaluation_test(
-#     rollout_processor=SingleTurnRolloutProcessor()
-# )
+JSONL_PATH = os.path.abspath("./development/chromio_v0_with_assistant_response.jsonl")
+
+@evaluation_test(
+    input_dataset=[JSONL_PATH],
+    completion_params=[{"model": "fireworks_ai/accounts/fireworks/models/qwen3-8b", "temperature": 0.0}],
+    max_dataset_rows=5, # TODO: Remove during training
+    passed_threshold=0.6,
+    rollout_processor=SingleTurnRolloutProcessor(),
+    mode="pointwise",
+)
 async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     """
     Evaluate generated color palette considering both similarity to ground truths palette and similar diversity
@@ -650,13 +659,13 @@ async def evaluator(row: EvaluationRow, **kwargs)->EvaluationRow:
     last_assistant_content = assistant_messages[-1].content if assistant_messages and getattr(assistant_messages[-1], "content", None) else ""
     
     prediction_palette = extract_color_palette(str(last_assistant_content))
-    if prediction_palette is None or gt_palette not in row:
+    if prediction_palette is None or 'gt_palette' not in row:
         is_score_valid = False
         reason="Unknown Reason."
         if prediction_palette is None:
             reason = "Invalid Model Output Format: Cannot find prediction palette"
             is_score_valid = True # punish incorrect format generation
-        elif gt_palette not in row:
+        elif 'gt_palette' not in row:
             reason = "Invalid Data: Missing gt_palette"
         
         row.evaluation_result = EvaluateResult(
