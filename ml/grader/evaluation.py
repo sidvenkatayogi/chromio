@@ -634,7 +634,7 @@ JSONL_PATH = os.path.abspath("./development/chromio_v0.jsonl")
 @evaluation_test(
     input_dataset=[JSONL_PATH],
     completion_params=[{"model": "fireworks_ai/accounts/fireworks/models/qwen3-8b", "temperature": 0.0}], # lowkey higher temp maybe?
-    max_dataset_rows=5, # TODO: Remove during training
+    # max_dataset_rows=5, # TODO: Remove during training
     passed_threshold=0.6, # threshold for average R_score accross entire dataset
     rollout_processor=SingleTurnRolloutProcessor(),
     mode="pointwise",

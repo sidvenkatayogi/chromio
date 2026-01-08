@@ -30,7 +30,7 @@ from ml.evaluator.config import (
     DEFAULT_MAX_RETRIES, DEFAULT_RETRY_DELAY, DEFAULT_REQUEST_DELAY
 )
 from ml.evaluator.model_clients import get_model_client
-from ml.grader.grader import Color, ColorPalette, DccwMeasurer, normalize_inv_map, harmonic_mean
+from ml.grader.evaluation import Color, ColorPalette, DccwMeasurer, normalize_inv_map, harmonic_mean
 
 import chromadb
 from chromadb.utils import embedding_functions

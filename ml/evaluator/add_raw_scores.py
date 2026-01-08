@@ -16,7 +16,7 @@ import pandas as pd
 import ast
 from pathlib import Path
 
-from ml.grader.grader import ColorPalette, DccwMeasurer
+from ml.grader.evaluation import ColorPalette, DccwMeasurer
 
 
 RESULTS_DIR = Path(__file__).parent / 'results'
