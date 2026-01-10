@@ -3,8 +3,8 @@
 Main evaluation script for color palette generation models.
 
 Usage:
-    python -m ml.evaluator.evaluate.py --provider openai --model gpt-4o-mini
-    python -m ml.evaluator.evaluate.py --provider fireworks --model accounts/fireworks/models/qwen3-8b
+    python -m ml.evaluator.evaluate --provider openai --model gpt-4o-mini
+    python -m ml.evaluator.evaluate --provider fireworks --model accounts/fireworks/models/qwen3-8b
 """
 
 import os
@@ -36,13 +36,14 @@ import chromadb
 from chromadb.utils import embedding_functions
 
 CHROMA_PATH = "chroma_db"
+CHROMA_PATH_HSL = "chroma_db_hsl"
 COLLECTION_NAME = "pat"
 MODEL_NAME = "all-mpnet-base-v2"
 
 
 def run_evaluation(provider: str, model: str = None, output_dir: str = None, limit: int = None,
                    max_retries: int = DEFAULT_MAX_RETRIES, retry_delay: float = DEFAULT_RETRY_DELAY,
-                   request_delay: float = DEFAULT_REQUEST_DELAY):
+                   request_delay: float = DEFAULT_REQUEST_DELAY, color_format: str = 'hex'):
     """
     Run the full evaluation pipeline.
     
@@ -54,6 +55,7 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
         max_retries: Maximum number of retries on rate limit errors
         retry_delay: Initial delay between retries (seconds)
         request_delay: Delay between requests to avoid rate limits (seconds)
+        color_format: Color format to use ('hex' or 'hsl')
     """
     # Setup paths
     data_dir = os.path.join(PROJECT_ROOT, EVAL_DATA_DIR)
@@ -63,8 +65,8 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
     # Get model name
     model_name = model or DEFAULT_MODELS.get(provider)
 
-    if provider == "fireworks" and model:
-        model_name = "accounts/fireworks/models/" + model
+    # if provider == "fireworks" and model:
+    #     model_name = "accounts/fireworks/models/" + model
 
     if not model_name:
         raise ValueError(f"No default model for provider: {provider}")
@@ -97,16 +99,18 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
     
     # Initialize model client
     print("Initializing model client...")
+    print(f"Color format: {color_format}")
     print(f"Rate limiting: max_retries={max_retries}, retry_delay={retry_delay}s, request_delay={request_delay}s")
     client = get_model_client(
         provider, model_name,
         max_retries=max_retries,
         retry_delay=retry_delay,
-        request_delay=request_delay
+        request_delay=request_delay,
+        color_format=color_format
     )
     
     print("Initializing example fetcher (loading embedding model)...")
-    chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH)
+    chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH_HSL if color_format == 'hsl' else CHROMA_PATH)
         
     # Initialize client and embedding function once
     chroma_client = chromadb.PersistentClient(path=chroma_path)
@@ -293,6 +297,13 @@ Examples:
         default=DEFAULT_REQUEST_DELAY,
         help=f"Delay between requests in seconds (default: {DEFAULT_REQUEST_DELAY})"
     )
+    parser.add_argument(
+        "--color-format",
+        type=str,
+        default="hex",
+        choices=["hex", "hsl"],
+        help="Color format to use for extraction (default: hex)"
+    )
     
     args = parser.parse_args()
     
@@ -303,7 +314,8 @@ Examples:
         limit=args.limit,
         max_retries=args.max_retries,
         retry_delay=args.retry_delay,
-        request_delay=args.request_delay
+        request_delay=args.request_delay,
+        color_format=args.color_format
     )
 
 

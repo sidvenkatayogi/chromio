@@ -19,18 +19,88 @@ DEFAULT_RETRY_BACKOFF = 2.0  # exponential backoff multiplier
 DEFAULT_REQUEST_DELAY = 0.5  # delay between requests (seconds)
 
 
+def extract_hsl_from_string(content: str) -> list:
+    """
+    Extract HSL colors from string using regex.
+    Matches format: (H, S%, L%) where H is 0-360, S and L are 0-100%
+    """
+    # Pattern to match (H, S%, L%) format
+    hsl_pattern = r'\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*\)'
+    matches = re.findall(hsl_pattern, content)
+    
+    hsl_colors = []
+    for h, s, l in matches:
+        h_int, s_int, l_int = int(h), int(s), int(l)
+        # Validate ranges
+        if 0 <= h_int < 360 and 0 <= s_int <= 100 and 0 <= l_int <= 100:
+            hsl_colors.append(f"({h_int}, {s_int}%, {l_int}%)")
+        if len(hsl_colors) >= 5:
+            break
+    
+    return hsl_colors
+
+
+def hsl_to_hex(hsl_str: str) -> str:
+    """
+    Convert HSL string format "(H, S%, L%)" to hex color "#RRGGBB".
+    """
+    # Parse HSL values
+    match = re.match(r'\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*\)', hsl_str)
+    if not match:
+        return "#000000"
+    
+    h, s, l = int(match.group(1)), int(match.group(2)), int(match.group(3))
+    
+    # Convert to 0-1 range
+    h = h / 360.0
+    s = s / 100.0
+    l = l / 100.0
+    
+    # HSL to RGB conversion
+    def hue_to_rgb(p, q, t):
+        if t < 0:
+            t += 1
+        if t > 1:
+            t -= 1
+        if t < 1/6:
+            return p + (q - p) * 6 * t
+        if t < 1/2:
+            return q
+        if t < 2/3:
+            return p + (q - p) * (2/3 - t) * 6
+        return p
+    
+    if s == 0:
+        r = g = b = l
+    else:
+        q = l * (1 + s) if l < 0.5 else l + s - l * s
+        p = 2 * l - q
+        r = hue_to_rgb(p, q, h + 1/3)
+        g = hue_to_rgb(p, q, h)
+        b = hue_to_rgb(p, q, h - 1/3)
+    
+    # Convert to 0-255 range and format as hex
+    r_int = int(round(r * 255))
+    g_int = int(round(g * 255))
+    b_int = int(round(b * 255))
+    
+    return f"#{r_int:02x}{g_int:02x}{b_int:02x}"
+
+
 class ModelClient:
     
     def __init__(self, max_retries: int = DEFAULT_MAX_RETRIES, 
                  retry_delay: float = DEFAULT_RETRY_DELAY,
                  retry_backoff: float = DEFAULT_RETRY_BACKOFF,
-                 request_delay: float = DEFAULT_REQUEST_DELAY):
+                 request_delay: float = DEFAULT_REQUEST_DELAY,
+                 color_format: str = 'hex'):
         load_dotenv()
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.retry_backoff = retry_backoff
         self.request_delay = request_delay
         self._last_request_time = 0
+        self.color_format = color_format.lower()
     
     def _extract_palette_text(self, data: dict) -> list:
         """
@@ -114,7 +184,14 @@ class ModelClient:
                 response_format={"type": "json_object"}
             )
             content = response.choices[0].message.content
-            palette_hex = self._extract_hex_from_string(content)
+            
+            # Extract colors based on format
+            if self.color_format == 'hsl':
+                palette_hsl = extract_hsl_from_string(content)
+                # Convert HSL to hex for evaluation
+                palette_hex = [hsl_to_hex(hsl) for hsl in palette_hsl]
+            else:
+                palette_hex = self._extract_hex_from_string(content)
             
             try:
                 content_json = json.loads(content)
