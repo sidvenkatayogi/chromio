@@ -1,10 +1,11 @@
 from flask import jsonify
 from errors import BadRequestError
 
-def generate_test_palette_from_query(user_query: str):
+def generate_test_palette_from_query(user_query: str, retrieved_examples: str):
     res = {
         "msg": "Test palette generated from user query!",
         "user_query": user_query,
+        "retrieved_examples": retrieved_examples,
         "palette": [
             "Word1(Hex1)",
             "Word2(Hex2)", 
