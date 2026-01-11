@@ -1,11 +1,5 @@
-chromadb
-sentence-transformers
-datasets
 numpy
-tqdm
-scikit-image
-openai
-python-dotenv
+pytest
 colormath==3.0.0
 elkai==2.0.1
-matplotlib
+eval-protocol

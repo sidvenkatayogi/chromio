@@ -44,6 +44,7 @@ from chromadb.utils import embedding_functions
 
 CHROMA_PATH = "chroma_db"
 CHROMA_PATH_HSL = "chroma_db_hsl"
+CHROMA_PATH_CIELAB = "chroma_db_cielab"
 COLLECTION_NAME = "pat"
 MODEL_NAME = "all-mpnet-base-v2"
 
@@ -112,6 +113,53 @@ def hsl_to_hex(hsl_str: str) -> str:
     r_int = int(round(r * 255))
     g_int = int(round(g * 255))
     b_int = int(round(b * 255))
+    
+    return f"#{r_int:02x}{g_int:02x}{b_int:02x}"
+
+
+def extract_lab_from_string(content: str) -> list:
+    """
+    Extract CIELAB colors from string using regex.
+    Matches format: L(L, a, b) where L is 0-100, a and b are -128 to 127
+    """
+    # Pattern to match L(L, a, b) format
+    lab_pattern = r'L\(\s*(\d{1,3})\s*,\s*(-?\d{1,3})\s*,\s*(-?\d{1,3})\s*\)'
+    matches = re.findall(lab_pattern, content)
+    
+    lab_colors = []
+    for L, a, b in matches:
+        L_int, a_int, b_int = int(L), int(a), int(b)
+        # Validate ranges
+        if 0 <= L_int <= 100 and -128 <= a_int <= 127 and -128 <= b_int <= 127:
+            lab_colors.append(f"L({L_int}, {a_int}, {b_int})")
+        if len(lab_colors) >= 5:
+            break
+    
+    return lab_colors
+
+
+def lab_to_hex(lab_str: str) -> str:
+    """
+    Convert CIELAB string format "L(L, a, b)" to hex color "#RRGGBB".
+    """
+    import numpy as np
+    from skimage import color as sk_color
+    
+    # Parse LAB values
+    match = re.match(r'L\(\s*(\d{1,3})\s*,\s*(-?\d{1,3})\s*,\s*(-?\d{1,3})\s*\)', lab_str)
+    if not match:
+        return "#000000"
+    
+    L, a, b = float(match.group(1)), float(match.group(2)), float(match.group(3))
+    
+    # Convert LAB to RGB
+    lab_array = np.array([[[L, a, b]]])
+    rgb_array = sk_color.lab2rgb(lab_array)[0][0]
+    
+    # Convert to 0-255 range and format as hex
+    r_int = int(round(np.clip(rgb_array[0] * 255, 0, 255)))
+    g_int = int(round(np.clip(rgb_array[1] * 255, 0, 255)))
+    b_int = int(round(np.clip(rgb_array[2] * 255, 0, 255)))
     
     return f"#{r_int:02x}{g_int:02x}{b_int:02x}"
 
@@ -244,6 +292,10 @@ class RequestsModelClient:
                 palette_hsl = extract_hsl_from_string(content)
                 # Convert HSL to hex for evaluation
                 palette_hex = [hsl_to_hex(hsl) for hsl in palette_hsl]
+            elif self.color_format == 'cielab' or self.color_format == 'lab':
+                palette_lab = extract_lab_from_string(content)
+                # Convert LAB to hex for evaluation
+                palette_hex = [lab_to_hex(lab) for lab in palette_lab]
             else:
                 palette_hex = self._extract_hex_from_string(content)
             
@@ -330,7 +382,12 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
     )
     
     print("Initializing example fetcher (loading embedding model)...")
-    chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH_HSL if color_format == 'hsl' else CHROMA_PATH)
+    if color_format == 'cielab' or color_format == 'lab':
+        chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH_CIELAB)
+    elif color_format == 'hsl':
+        chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH_HSL)
+    else:
+        chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH)
         
     # Initialize client and embedding function once
     chroma_client = chromadb.PersistentClient(path=chroma_path)
@@ -564,7 +621,7 @@ Examples:
         "--color-format",
         type=str,
         default="hex",
-        choices=["hex", "hsl"],
+        choices=["hex", "hsl", "cielab", "lab"],
         help="Color format to use for extraction (default: hex)"
     )
     

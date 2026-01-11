@@ -12,6 +12,9 @@ __MACOSX
 venv/
 chroma_db/
 chroma_db_train/
+chroma_db_train_hsl/
+chroma_db_cielab/
+chroma_db_hsl/
 *.pkl
 pycache/
 __pycache__

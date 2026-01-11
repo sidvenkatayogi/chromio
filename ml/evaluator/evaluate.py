@@ -37,6 +37,7 @@ from chromadb.utils import embedding_functions
 
 CHROMA_PATH = "chroma_db"
 CHROMA_PATH_HSL = "chroma_db_hsl"
+CHROMA_PATH_CIELAB = "chroma_db_cielab"
 COLLECTION_NAME = "pat"
 MODEL_NAME = "all-mpnet-base-v2"
 
@@ -110,7 +111,12 @@ def run_evaluation(provider: str, model: str = None, output_dir: str = None, lim
     )
     
     print("Initializing example fetcher (loading embedding model)...")
-    chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH_HSL if color_format == 'hsl' else CHROMA_PATH)
+    if color_format == 'cielab' or color_format == 'lab':
+        chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH_CIELAB)
+    elif color_format == 'hsl':
+        chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH_HSL)
+    else:
+        chroma_path = os.path.join(PROJECT_ROOT, CHROMA_PATH)
         
     # Initialize client and embedding function once
     chroma_client = chromadb.PersistentClient(path=chroma_path)
@@ -301,7 +307,7 @@ Examples:
         "--color-format",
         type=str,
         default="hex",
-        choices=["hex", "hsl"],
+        choices=["hex", "hsl", "cielab", "lab"],
         help="Color format to use for extraction (default: hex)"
     )
     
