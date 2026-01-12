@@ -41,7 +41,7 @@ class RetrieveCollectionMiddleware:
                 )
             except Exception as e:
                 logger.error(f"ChromaDB middleware error: {e}")
-                return CustomAPIError(
+                raise CustomAPIError(
                     name="Database initialization failed",
                     message=str(e)
                 )
@@ -65,7 +65,7 @@ class QueryCollectionMiddleware:
             collection = getattr(g, "chroma_collection", None)
             if collection is None:
                 logger.error("Query middleware invoked without chroma_collection")
-                return CustomAPIError(
+                raise CustomAPIError(
                     name="Chroma collection not initialized",
                     message="RetrieveCollectionMiddleware must run before querying",
                 )
@@ -94,7 +94,7 @@ class QueryCollectionMiddleware:
 
                 except Exception as e:
                     logger.exception("ChromaDB query parsing failed")
-                    return CustomAPIError(
+                    raise CustomAPIError(
                         name="ChromaDB query parsing failed",
                         message=str(e),
                     )
@@ -107,7 +107,7 @@ class QueryCollectionMiddleware:
 
             except Exception as e:
                 logger.exception("ChromaDB query failed")
-                return CustomAPIError(
+                raise CustomAPIError(
                     name="ChromaDB query failed",
                     message=str(e),
                 )

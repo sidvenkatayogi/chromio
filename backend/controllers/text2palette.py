@@ -69,7 +69,7 @@ def generate_test_palette_from_query(user_query: str, retrieved_examples: str):
         h_int, s_int, l_int = int(h), int(s), int(l)
         if 0 <= h_int < 360 and 0 <= s_int <= 100 and 0 <= l_int <= 100:
             r, g, b = colorsys.hls_to_rgb(h_int/360, l_int/100, s_int/100)
-            hsl_colors.append([r, g, b])
+            hsl_colors.append([int(r * 255 + 0.5), int(g * 255 + 0.5), int(b * 255 + 0.5)])
         if len(hsl_colors) >= 5:
             break
 
