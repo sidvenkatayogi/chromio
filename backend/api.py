@@ -4,18 +4,25 @@ from flask_restful import Api # type: ignore
 from flask_cors import CORS # type: ignore
 
 from middleware import register_middleware
-
+from db.extensions import db
 from routes import *
 
 
 api = Api()
 
-def create_app():
+def create_app():    
     app = Flask(__name__)
     CORS(app, origins='*')
 
     api.init_app(app) # init app
     register_middleware(app) # middleware
+    
+    # initialize db client and collection
+    db.get_collection( # TODO: move these into .env later pls
+        "db/chroma_db_hsl",
+        collection_name="pat",
+        ef_model_name="all-mpnet-base-v2",
+    )
 
 
     @app.route('/api/v1/', methods=['GET'])
@@ -30,6 +37,8 @@ def create_app():
 
 
 if __name__ == '__main__':
+    print("Initializing Api...")
+    
     app = create_app()
     
     port = 5000
