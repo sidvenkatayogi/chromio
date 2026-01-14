@@ -2,7 +2,7 @@ from color_utils.color import Color
 from colormath.color_diff import delta_e_cie2000
 
 class ColorPalette:
-    def __init__(self, source, option='rbg', original_palette_group = None):
+    def __init__(self, source, option='rgb', original_palette_group = None):
         """
             option = <'rbg' | 'color' | 'hex'>
         """
@@ -29,6 +29,14 @@ class ColorPalette:
             return self._get_HEX_color_objects(order)
         else:
             return [c.HEX() for c in self.colors]
+    
+    def to_rgb_list(self, order=None):
+        # return shape: [(14, 99, 141), (123, 169, 160), (230, 214, 207), (227, 160, 127)]
+        if order:
+            return self._get_RGB_color_values(order)
+        else:
+            return [c.RGB_val() for c in self.colors]
+    
 
     def to_serialized_hex_string(self):
 	    return '\n'.join(self.to_hex_list())
@@ -112,6 +120,12 @@ class ColorPalette:
         result = []
         for idx in order:
             result.append(self.colors[idx].HEX())
+        return result
+
+    def _get_RGB_color_values(self, order):
+        result = []
+        for idx in order:
+            result.append(self.colors[idx].RGB_val())
         return result
     
     # sourced from evaluation_hsl.py

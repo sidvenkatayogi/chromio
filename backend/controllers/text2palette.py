@@ -5,6 +5,9 @@ import re
 import colorsys
 from dotenv import load_dotenv
 
+from color_utils.color_palette import ColorPalette
+from color_utils.single_palette_sorter import SinglePaletteSorter
+
 SYSTEM_PROMPT_HSL = """
 You are an expert Color Theorist and UI Designer. Your task is to generate a cohesive, aesthetically pleasing color palette based on a user's text query.
 
@@ -64,20 +67,26 @@ def generate_test_palette_from_query(user_query: str, retrieved_examples: str):
     hsl_pattern = r'\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*\)'
     matches = re.findall(hsl_pattern, content)
     
-    hsl_colors = []
+    rgb_colors = []
     for h, s, l in matches:
         h_int, s_int, l_int = int(h), int(s), int(l)
         if 0 <= h_int < 360 and 0 <= s_int <= 100 and 0 <= l_int <= 100:
             r, g, b = colorsys.hls_to_rgb(h_int/360, l_int/100, s_int/100)
-            hsl_colors.append([int(r * 255 + 0.5), int(g * 255 + 0.5), int(b * 255 + 0.5)])
-        if len(hsl_colors) >= 5:
+            rgb_colors.append([int(r * 255 + 0.5), int(g * 255 + 0.5), int(b * 255 + 0.5)])
+        if len(rgb_colors) >= 5:
             break
 
+    palette = ColorPalette(source=rgb_colors, option='rgb')
+    sps = SinglePaletteSorter(palette)
+    order = sps.sort()
+    
+    ordered_rgb_colors = palette.to_rgb_list(order=order)
+    
     res = {
         "msg": "Test palette generated from user query!",
         "user_query": user_query,
         "retrieved_examples": retrieved_examples,
-        "palette": hsl_colors
+        "palette": ordered_rgb_colors
     }
 
     return jsonify(res), 200

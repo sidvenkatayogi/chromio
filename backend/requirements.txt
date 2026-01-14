@@ -1,3 +1,9 @@
+# color_utils
+numpy
+colormath==3.0.0
+python_tsp==0.5.0   # previously elkai==2.0.1
+
+
 dotenv==0.9.9
 python-dotenv==1.0.1
 aniso8601==10.0.0

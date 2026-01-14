@@ -25,6 +25,9 @@ class Color:
     def RGB(self):
         return self.rgb
     
+    def RGB_val(self):
+        return self.rgb.get_upscaled_value_tuple()
+    
     def HEX(self):
         return self.hex
     

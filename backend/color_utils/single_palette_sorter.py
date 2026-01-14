@@ -1,5 +1,6 @@
 import math
-import elkai
+import numpy as np
+from python_tsp.exact import solve_tsp_dynamic_programming
 from colormath.color_diff import delta_e_cie2000
 
 class SinglePaletteSorter:
@@ -26,7 +27,7 @@ class SinglePaletteSorter:
 		distance_matrix = self._get_distance_matrix()
 		enlarged_distance_matrix = [[round(e*10000) for e in dm] for dm in distance_matrix]
 
-		best_state = elkai.solve_int_matrix(enlarged_distance_matrix, 100)
+		best_state, _ = solve_tsp_dynamic_programming(np.array(enlarged_distance_matrix))
 
 		reordered_best_state = None
 		direction, initial_node_index = self._TSP_graph_cut(best_state, distance_matrix, with_cutting)
