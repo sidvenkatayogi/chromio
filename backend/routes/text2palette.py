@@ -5,7 +5,7 @@ from middleware.ChromaDBMiddleware import RetrieveCollectionMiddleware, QueryCol
 
 text2palette_bp = Blueprint('text2palette', __name__)
 
-@text2palette_bp.route('/', methods=['GET'])
+@text2palette_bp.route('/', methods=['GET', 'POST'])
 @RetrieveCollectionMiddleware(db_path="db/chroma_db_hsl")
 @QueryCollectionMiddleware(n_results=3)
 def get_single_text_palette():
