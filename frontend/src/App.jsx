@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import axios from 'axios'
 import './App.css'
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
   };
 
   const handleGenerate = async () => {
-    if (!prompt) return;
+    if (!prompt || loading) return;
     setLoading(true);
     setError(null);
     
@@ -26,6 +27,7 @@ function App() {
     // setPalette([]); 
 
     try {
+      console.log(import.meta.env.VITE_SERVER_URL)
       const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/v1/text2palette/`, {
         method: 'POST',
         headers: {
@@ -64,7 +66,7 @@ function App() {
 
   return (
     <div>
-      <h1>Text to Palette Generator</h1>
+      <h1 className='font-bold'>Text to Palette Generator</h1>
       
       <div className="input-container">
         <input 
