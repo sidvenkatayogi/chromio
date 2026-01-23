@@ -26,7 +26,7 @@ function App() {
     // setPalette([]); 
 
     try {
-      const response = await fetch('/api/v1/text2palette/', {
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/v1/text2palette/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
