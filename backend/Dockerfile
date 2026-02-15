@@ -19,4 +19,4 @@ EXPOSE 5000
 
 # Run with Gunicorn for production
 # Adjust workers (-w) based on your server's CPU cores
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "--log-level", "info", "--access-logfile", "-", "api:create_app()"]
+CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:5000", "--log-level", "info", "--access-logfile", "-", "api:create_app()"]
