@@ -19,7 +19,7 @@ def create_app():
     
     # initialize db client and collection
     db.get_collection( # TODO: move these into .env later pls
-        "db/chroma_db_hsl",
+        "./db/chroma_db_hsl",
         collection_name="pat",
         ef_model_name="all-mpnet-base-v2",
     )

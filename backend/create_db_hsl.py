@@ -8,11 +8,11 @@ import pickle
 
 
 # Configuration
-CHROMA_PATH = "../backend/db/chroma_db_hsl"
+CHROMA_PATH = "backend/db/chroma_db_hsl"
 COLLECTION_NAME = "pat"
 MODEL_NAME = "all-mpnet-base-v2"
 
-KD_TREE_PATH = "color_kdtree.pkl"
+KD_TREE_PATH = "backend/color_kdtree.pkl"
 
 batch_size = 128
 
@@ -78,9 +78,9 @@ def main():
 
     # Load hexcolor dataset
     print("Loading hexcolor dataset...")
-    with open("hexcolor_vf/train_names.pkl", "rb") as f:
+    with open("backend/hexcolor_vf/train_names.pkl", "rb") as f:
         train_names = pickle.load(f)
-    with open("hexcolor_vf/train_palettes_rgb.pkl", "rb") as f:
+    with open("backend/hexcolor_vf/train_palettes_rgb.pkl", "rb") as f:
         train_palettes = pickle.load(f)
     print(f"Loaded {len(train_names)} entries.")
 

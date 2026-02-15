@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: chromio-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      # Mount only the ChromaDB data directory, not the whole db/ package
+      - ./backend/db/chroma_db_hsl:/app/db/chroma_db_hsl
+      - ./backend/color_kdtree.pkl:/app/color_kdtree.pkl
+
+  frontend:
+    build: ./frontend
+    container_name: chromio-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # This tells the frontend where to find the backend.
+      # For local testing, 'http://localhost:5000' works.
+      # For a remote server, use 'http://<YOUR_SERVER_IP>:5000'
+      - VITE_SERVER_URL=http://localhost:5000
+    depends_on:
+      - backend

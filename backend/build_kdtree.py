@@ -4,7 +4,7 @@ from datasets import load_dataset
 from tqdm import tqdm
 from skimage import color
 
-KD_TREE_PATH = "color_kdtree.pkl"
+KD_TREE_PATH = "backend/color_kdtree.pkl"
 
 def hex_to_rgb(hex_code):
     hex_code = hex_code.lstrip('#')
