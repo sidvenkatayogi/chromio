@@ -16,7 +16,7 @@ chroma_db_train_hsl/
 chroma_db_cielab/
 # chroma_db_hsl/
 node_modules/
-# *.pkl
+*.pkl
 pycache/
 __pycache__
 .env
