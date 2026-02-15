@@ -1,3 +1,5 @@
+import logging
+
 from flask import Flask, jsonify # type: ignore
 from flask_sqlalchemy import SQLAlchemy # type: ignore
 from flask_restful import Api # type: ignore
@@ -7,18 +9,19 @@ from middleware import register_middleware
 from db.extensions import db
 from routes import *
 
+logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
 
 api = Api()
 
-def create_app():    
+def create_app():
     app = Flask(__name__)
     CORS(app, origins='*')
 
     api.init_app(app) # init app
     register_middleware(app) # middleware
     
-    # initialize db client and collection
-    db.get_collection( # TODO: move these into .env later pls
+    # initialize db client and collection once at startup
+    app.extensions['chromadb_collection'] = db.get_collection(
         "./db/chroma_db_hsl",
         collection_name="pat",
         ef_model_name="all-mpnet-base-v2",

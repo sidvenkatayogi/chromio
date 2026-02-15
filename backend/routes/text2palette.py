@@ -1,12 +1,11 @@
 from flask import g, Blueprint, request  # type: ignore
 
 from controllers.text2palette import *
-from middleware.ChromaDBMiddleware import RetrieveCollectionMiddleware, QueryCollectionMiddleware
+from middleware.ChromaDBMiddleware import QueryCollectionMiddleware
 
 text2palette_bp = Blueprint('text2palette', __name__)
 
 @text2palette_bp.route('/', methods=['GET', 'POST'])
-@RetrieveCollectionMiddleware(db_path="db/chroma_db_hsl")
 @QueryCollectionMiddleware(n_results=3)
 def get_single_text_palette():
     data = request.json_data or {}

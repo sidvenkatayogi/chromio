@@ -3,6 +3,8 @@ from errors import BadRequestError
 import openai
 import re
 import colorsys
+import time
+import logging
 from dotenv import load_dotenv
 
 from color_utils.color_palette import ColorPalette
@@ -51,7 +53,11 @@ Here are some associate text-palette pairs for reference:
 load_dotenv()
 client = openai.OpenAI()
 
+logger = logging.getLogger(__name__)
+
 def generate_test_palette_from_query(user_query: str, retrieved_examples: str):
+
+    t0 = time.time()
 
     response = client.chat.completions.create(
         model="gpt-5-mini",
@@ -62,11 +68,14 @@ def generate_test_palette_from_query(user_query: str, retrieved_examples: str):
         response_format={"type": "json_object"}
     )
 
+    t1 = time.time()
+    logger.info("[timing] OpenAI API call: %.3fs", t1 - t0)
+
     content = response.choices[0].message.content
 
     hsl_pattern = r'\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*\)'
     matches = re.findall(hsl_pattern, content)
-    
+
     rgb_colors = []
     for h, s, l in matches:
         h_int, s_int, l_int = int(h), int(s), int(l)
@@ -76,12 +85,19 @@ def generate_test_palette_from_query(user_query: str, retrieved_examples: str):
         if len(rgb_colors) >= 5:
             break
 
+    t2 = time.time()
+    logger.info("[timing] HSL parsing + RGB conversion: %.3fs", t2 - t1)
+
     palette = ColorPalette(source=rgb_colors, option='rgb')
     sps = SinglePaletteSorter(palette)
     order = sps.sort()
-    
+
     ordered_rgb_colors = palette.to_rgb_list(order=order)
-    
+
+    t3 = time.time()
+    logger.info("[timing] Palette sorting: %.3fs", t3 - t2)
+    logger.info("[timing] Total controller time: %.3fs", t3 - t0)
+
     res = {
         "msg": "Test palette generated from user query!",
         "user_query": user_query,
