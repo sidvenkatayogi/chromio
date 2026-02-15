@@ -24,7 +24,8 @@ def create_app():
     app.extensions['chromadb_collection'] = db.get_collection(
         "./db/chroma_db_hsl",
         collection_name="pat",
-        ef_model_name="all-mpnet-base-v2",
+        ef_model_name="all-MiniLM-L6-v2",
+        # ef_model_name="all-mpnet-base-v2",
     )
 
 

@@ -10,7 +10,8 @@ import pickle
 # Configuration
 CHROMA_PATH = "backend/db/chroma_db_hsl"
 COLLECTION_NAME = "pat"
-MODEL_NAME = "all-mpnet-base-v2"
+MODEL_NAME = "all-MiniLM-L6-v2"
+# MODEL_NAME = "all-mpnet-base-v2"
 
 KD_TREE_PATH = "backend/color_kdtree.pkl"
 

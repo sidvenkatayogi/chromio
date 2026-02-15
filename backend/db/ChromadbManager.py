@@ -51,7 +51,8 @@ class ChromaDBManager:
         return self._client
 
 
-    def get_collection(self, db_path: str, collection_name: str = "pat", ef_model_name:str = "all-mpnet-base-v2"):
+    def get_collection(self, db_path: str, collection_name: str = "pat", ef_model_name:str = "all-MiniLM-L6-v2"):
+    # def get_collection(self, db_path: str, collection_name: str = "pat", ef_model_name:str = "all-mpnet-base-v2"):
         """
             Get collection from cached client
         """
