@@ -51,8 +51,7 @@ class ChromaDBManager:
         return self._client
 
 
-    def get_collection(self, db_path: str, collection_name: str = "pat", ef_model_name:str = "all-MiniLM-L6-v2"):
-    # def get_collection(self, db_path: str, collection_name: str = "pat", ef_model_name:str = "all-mpnet-base-v2"):
+    def get_collection(self, db_path: str, collection_name: str = "pat", ef_model_name:str = "text-embedding-3-small"):
         """
             Get collection from cached client
         """
@@ -60,9 +59,17 @@ class ChromaDBManager:
             with self._collections_lock:
                 if collection_name not in self._collections_cache:
                     client = self.get_client(db_path)
+                    import os
 
                     try:
-                        ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=ef_model_name)
+                        api_key = os.getenv("OPENAI_API_KEY")
+                        if not api_key:
+                            logger.error("OPENAI_API_KEY not found in environment variables")
+                            
+                        ef = embedding_functions.OpenAIEmbeddingFunction(
+                            api_key=api_key,
+                            model_name=ef_model_name
+                        )
                         collection = client.get_collection(
                             name=collection_name,
                             embedding_function=ef
@@ -70,6 +77,12 @@ class ChromaDBManager:
 
                         self._collections_cache[collection_name] = collection
                         logger.info(f"Collection '{collection_name}' cached with embedding function")
+                    except ValueError as e:
+                        if "embedding function already exists" in str(e):
+                            logger.error(f"Embedding model mismatch for collection '{collection_name}'. "
+                                         "You must delete the existing database folder and run 'create_db_hsl.py' "
+                                         "to recreate it with OpenAI embeddings.")
+                        raise e
                     except Exception as e:
                         logger.error(f"Error getting collection '{collection_name}': {e}")
                         raise

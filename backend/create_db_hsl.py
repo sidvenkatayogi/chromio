@@ -5,13 +5,15 @@ from tqdm import tqdm
 from skimage import color
 import json
 import pickle
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 # Configuration
 CHROMA_PATH = "backend/db/chroma_db_hsl"
 COLLECTION_NAME = "pat"
-MODEL_NAME = "all-MiniLM-L6-v2"
-# MODEL_NAME = "all-mpnet-base-v2"
+MODEL_NAME = "text-embedding-3-small"
 
 KD_TREE_PATH = "backend/color_kdtree.pkl"
 
@@ -90,7 +92,10 @@ def main():
     client = chromadb.PersistentClient(path=CHROMA_PATH)
     
     # Create embedding function
-    ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=MODEL_NAME)
+    ef = embedding_functions.OpenAIEmbeddingFunction(
+        api_key=os.getenv("OPENAI_API_KEY"),
+        model_name=MODEL_NAME
+    )
     
     # Get or create collection
     collection = client.get_or_create_collection(name=COLLECTION_NAME, embedding_function=ef)

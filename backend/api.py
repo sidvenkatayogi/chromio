@@ -1,4 +1,8 @@
 import logging
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from flask import Flask, jsonify # type: ignore
 from flask_sqlalchemy import SQLAlchemy # type: ignore
@@ -24,8 +28,7 @@ def create_app():
     app.extensions['chromadb_collection'] = db.get_collection(
         "./db/chroma_db_hsl",
         collection_name="pat",
-        ef_model_name="all-MiniLM-L6-v2",
-        # ef_model_name="all-mpnet-base-v2",
+        ef_model_name="text-embedding-3-small",
     )
 
 
