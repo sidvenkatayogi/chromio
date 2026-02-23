@@ -10,7 +10,8 @@ from flask_restful import Api # type: ignore
 from flask_cors import CORS # type: ignore
 
 from middleware import register_middleware
-from db.extensions import db
+from db.SupaAuthManager import SupaAuthManager
+from db.extensions import db, supa_auth
 from routes import *
 
 logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
@@ -29,6 +30,12 @@ def create_app():
         "./db/chroma_db_hsl",
         collection_name="pat",
         ef_model_name="text-embedding-3-small",
+    )
+    
+    # initialize auth
+    SupaAuthManager().init(
+        url=os.getenv('SUPABASE_URL'),
+        apiKey=os.getenv('SUPABASE_KEY'),
     )
 
 

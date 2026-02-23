@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ChromaDBManager:
     """
-        Singleton manager for ChromaDB client and collection caching
+    Singleton manager for ChromaDB client and collection caching
     """
     _instance = None
     _lock = threading.Lock()
@@ -37,7 +37,7 @@ class ChromaDBManager:
 
     def get_client(self, db_path: str):
         """
-            Get or create ChromaDB client with caching.
+        Get or create ChromaDB client with caching.
         """
         if self._client is None:
             with self._client_lock:
@@ -53,7 +53,7 @@ class ChromaDBManager:
 
     def get_collection(self, db_path: str, collection_name: str = "pat", ef_model_name:str = "text-embedding-3-small"):
         """
-            Get collection from cached client
+        Get collection from cached client
         """
         if collection_name not in self._collections_cache:
             with self._collections_lock:
@@ -92,8 +92,8 @@ class ChromaDBManager:
 
     def close(self):
         """
-            Close client and clear cache
-            Must be done before initializing a new client
+        Close client and clear cache
+        Must be done before initializing a new client
         """
         with self._client_lock:
             with self._collections_lock:
