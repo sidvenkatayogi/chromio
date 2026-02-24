@@ -37,7 +37,8 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
+        const errBody = await response.json().catch(() => null);
+        throw new Error(errBody?.message || `HTTP ${response.status}`);
       }
 
       const data = await response.json();

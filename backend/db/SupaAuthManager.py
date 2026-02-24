@@ -27,14 +27,14 @@ class SupaAuthManager:
     _instance = None
     _instance_lock = threading.Lock()
 
-    def __new__(cls) -> SupaAuthManager:
+    def __new__(cls):
         if cls._instance is None:
             with cls._instance_lock:
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self) -> None:
+    def __init__(self):
         if not hasattr(self, "_initialized"):
             self._client = None
             self._client_lock = threading.Lock()

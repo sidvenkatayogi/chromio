@@ -1,3 +1,4 @@
+import json
 from flask import request, jsonify
 from errors import CustomAPIError
 
@@ -52,5 +53,5 @@ def register_middleware(app):
             "message": str(e.description) if hasattr(e, 'description') else str(e)
         }
         response = jsonify(response_data)
-        response.status_code = e.code or 500
+        response.status_code = e.status_code or 500
         return response
