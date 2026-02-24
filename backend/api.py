@@ -11,7 +11,7 @@ from flask_cors import CORS # type: ignore
 
 from middleware import register_middleware
 from db.SupaAuthManager import SupaAuthManager
-from db.extensions import db, supa_auth
+from db.extensions import db
 from routes import *
 
 logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
@@ -34,7 +34,7 @@ def create_app():
     
     # initialize auth
     SupaAuthManager().init(
-        url=os.getenv('SUPABASE_URL'),
+        url=os.getenv('SUPABASE_URL') + "/auth/v1",
         apiKey=os.getenv('SUPABASE_KEY'),
     )
 
@@ -46,6 +46,7 @@ def create_app():
     
     # router
     app.register_blueprint(text2palette_bp, url_prefix='/api/v1/text2palette')
+    app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
 
     return app
 
