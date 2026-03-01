@@ -1,6 +1,6 @@
 # Project Overview
 
-This is a React - Python Flask based full stack website. The purpose of this website is to generate, build, and catalog professional color palettes based on user preference or query. 
+This is a React - Python Flask based full stack website styled using Tailwindcss. The purpose of this website is to generate, build, and catalog professional color palettes based on user preference or query. 
 
 **YOU MUST**: Do not add external dependencies without approval. New dependencies must result in a manual docker instance rebuild.
 **YOU MUST**: Never commit or add changes to git without my permission.
