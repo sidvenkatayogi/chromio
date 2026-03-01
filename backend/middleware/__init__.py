@@ -53,5 +53,5 @@ def register_middleware(app):
             "message": str(e.description) if hasattr(e, 'description') else str(e)
         }
         response = jsonify(response_data)
-        response.status_code = e.status_code or 500
+        response.status_code = getattr(e, 'status_code', 500)
         return response

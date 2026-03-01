@@ -1,7 +1,7 @@
 from flask import jsonify  # type: ignore
 from supabase_auth.errors import AuthApiError
 
-from errors import CustomAPIError, UnprocessableEntityError
+from errors import CustomAPIError, UnauthorizedError, UnprocessableEntityError
 
 def _session_to_tokens(session) -> dict:
     """Extract JWT-related fields from a GoTrue Session object."""
@@ -53,9 +53,12 @@ def sign_in_controller(signin_request, client):
             "email": signin_request.email,
             "password": signin_request.password
         })
-    except AuthApiError as exc:
+    except AuthApiError as e:
         msg = getattr(e, "message", None) or str(e)
         status = getattr(e, "status", None) or getattr(e, "status_code", None) or 400
+
+        if status == 400:
+            raise UnauthorizedError(message=msg)
         raise CustomAPIError(message=msg, status_code=status)
     
     user = response.user
@@ -82,6 +85,8 @@ def oauth_sign_in_controller(oauth_request, client, allowed_providers={"google"}
     except AuthApiError as e:
         msg = getattr(e, "message", None) or str(e)
         status = getattr(e, "status", None) or getattr(e, "status_code", None) or 400
+        if status == 400:
+            raise UnauthorizedError(message=msg)
         raise CustomAPIError(message=msg, status_code=status)
 
     result = {
@@ -98,6 +103,8 @@ def oauth_cb(code, client):
     except AuthApiError as e:
         msg = getattr(e, "message", None) or str(e)
         status = getattr(e, "status", None) or getattr(e, "status_code", None) or 400
+        if status == 400:
+            raise UnauthorizedError(message=msg)
         raise CustomAPIError(message=msg, status_code=status)
     
     user = response.user

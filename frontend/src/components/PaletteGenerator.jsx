@@ -22,11 +22,17 @@ export default function PaletteGenerator() {
 
     try {
       console.log(import.meta.env.VITE_SERVER_URL)
+      const accessToken = localStorage.getItem('access_token')
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`
+      }
+
       const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/v1/text2palette/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ user_query: prompt }),
       });
 

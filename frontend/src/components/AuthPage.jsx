@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { authAPI } from '../utils/api'
 
 function AuthPage({ mode = 'login' }) {
   const navigate = useNavigate()
@@ -34,18 +35,29 @@ function AuthPage({ mode = 'login' }) {
       return
     }
 
-    // TODO: Implement API calls for login/signup
-    // For now, just log the values
-    if (isLogin) {
-      console.log('Login attempt:', { email, password })
-    } else {
-      console.log('Signup attempt:', { email, password })
+    try {
+      const response = isLogin
+        ? await authAPI.login(email, password)
+        : await authAPI.signup(email, password)
+
+      // Store access token in localStorage
+      const accessToken = response.data.tokens.access_token
+      if (accessToken) {
+        localStorage.setItem('access_token', accessToken)
+      }
+
+      // Navigate to home on success
+      navigate('/')
+    } catch (err) {
+      let errorMessage = 'Something has gone wrong. Please try again later'
+
+      if (err?.response?.data?.message)
+        errorMessage = err.response.data.message
+
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
-
-    // Simulate successful auth and navigate to home
-    navigate('/')
   }
 
   const handleGoogleAuth = () => {
