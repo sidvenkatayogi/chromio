@@ -136,11 +136,11 @@ function AuthPage({ mode = 'login' }) {
                   isLogin ? 'Enter your password' : 'Create a password'
                 }
                 required
-                minLength={6}
+                minLength={8}
               />
               {!isLogin && (
                 <p className="text-xs text-gray-400 mt-1">
-                  Must be at least 6 characters
+                  Must be at least 8 characters
                 </p>
               )}
             </div>
@@ -159,7 +159,7 @@ function AuthPage({ mode = 'login' }) {
                   className="w-full px-4 py-3 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
                   placeholder="Confirm your password"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
             )}

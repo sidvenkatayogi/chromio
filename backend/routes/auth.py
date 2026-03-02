@@ -26,7 +26,7 @@ def signup_route():
         
         return sign_up_controller(SignUpRequest(email=email, password=password), SupaAuthManager().get_client())
     except ValueError as e:
-        raise BadRequestError(message=e.message)
+        raise BadRequestError(message=str(e))
 
 
 @auth_bp.post("/signin")
@@ -45,7 +45,7 @@ def signin_route():
         
         return sign_in_controller(SignInRequest(email=email, password=password), SupaAuthManager().get_client())
     except ValueError as e:
-        raise BadRequestError(message=e.message)
+        raise BadRequestError(message=str(e))
 
 
 @auth_bp.post("/oauth/signin")
@@ -65,7 +65,7 @@ def oauth_signin_route():
         
         return oauth_sign_in_controller(OAuthRequest(provider=provider, redirect_to=redirect_to), SupaAuthManager().get_client())
     except ValueError as e:
-        raise BadRequestError(message=e.message)
+        raise BadRequestError(message=str(e))
 
 
 
