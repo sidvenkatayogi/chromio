@@ -1,0 +1,14 @@
+# Experiments Requirements
+chromadb
+sentence-transformers
+numpy
+tqdm
+scikit-image
+colormath==3.0.0
+openai
+python-dotenv
+fireworks-ai
+pandas
+matplotlib
+elkai==2.0.1
+eval-protocol

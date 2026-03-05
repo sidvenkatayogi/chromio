@@ -6,6 +6,7 @@ openai
 fireworks-ai
 chromadb
 sentence-transformers
+scikit-image
 
 # Dependencies from grader
 numpy
