@@ -14,3 +14,10 @@ docker:
 
 docker_sudo:
 	sudo docker run --rm -it -p 5173:5173 -v $(CURDIR):/usr/frontend -w /usr/frontend chromio/frontend
+
+
+docker-dev:
+	docker run --rm -it -p 5173:5173 -v $(CURDIR):/usr/frontend -w /usr/frontend chromio/frontend_dev
+
+docker-build-dev:
+	docker build -f Dockerfile.dev -t chromio/frontend_dev .
