@@ -1,4 +1,15 @@
-# Chromio
+# Chromio (ML)
+
+### The most interesting part of this project is in /ml and /experiments. The full-stack app is more of a by-product of the ML work we did.
+
+### The main thing we did was design and execute an RLVR fine-tuning protocol to improve color palette generation in small open-source LLMs. Used deterministic reward metrics for aesthetic output, and serverless LoRA fine-tuning on the Fireworks.ai platform
+
+
+### Improved Qwen3-8B palette similarity scores by 13% over baseline, beating gpt-5-mini and gpt-4o!
+
+### Need to do a write-up of this project eventually because it was really interesting, but basically we used this [paper](https://arxiv.org/abs/2508.08987) + fine-tuning to get SOTA performance.
+
+# Chromio (Full-stack App):
 
 A React + Python Flask full stack app for generating, building, and cataloging professional color palettes based on user preference or query.
 
